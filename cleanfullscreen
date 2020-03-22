@@ -5,15 +5,11 @@
 # looks kind of gross so that's why this exists.
 
 HideBar() {
-  if pgrep "polybar"; then
-    polybar-msg cmd hide
-  fi
+  polybar-msg cmd hide
 }
 
 ShowBar() {
-  if pgrep "polybar"; then
-    polybar-msg cmd show
-  fi
+  polybar-msg cmd show
 }
 
 HideNodes() {
@@ -34,14 +30,17 @@ ShowNodes() {
 
 bspc subscribe node_state | while read -r Event
 do
+  Monitor=$(echo "$Event" | awk '{print $2}')
   Desktop=$(echo "$Event" | awk '{print $3}')
   State=$(echo "$Event" | awk '{print $5}')
   Active=$(echo "$Event" | awk '{print $6}')
   # Hide bar and nodes when node becomes fullscreen, otherwise show
   if [ "$State" = "fullscreen" ]; then
     if [ "$Active" = "on" ]; then
+      if [ "$(bspc query -M -m primary)" = "$Monitor" ]; then
+        HideBar
+      fi
       HideNodes "$Desktop"
-      HideBar
     else
       ShowNodes "$Desktop"
       ShowBar
@@ -79,7 +78,7 @@ do
   Desktop=$(echo "$Event" | awk '{print $3}')
 
   # Hide bar if desktop contains fullscreen node, otherwise show it
-  if [ -n "$(bspc query -N -n .fullscreen -d "$Desktop")" ]; then
+  if [ -n "$(bspc query -N -n .fullscreen -d "$Desktop" -m primary)" ]; then
     HideBar
   else
     ShowBar
